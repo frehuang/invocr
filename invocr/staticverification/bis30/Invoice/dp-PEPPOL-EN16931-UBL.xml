@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:svrl="http://purl.oclc.org/dsdl/svrl"
+    xmlns:u="utils"
+    xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+    xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2"
+    xmlns:ubl-creditnote="urn:oasis:names:specification:ubl:schema:xsd:CreditNote-2"
+    xmlns:ubl-invoice="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2"
+    exclude-result-prefixes="xs u"
+    version="2.0">
+    
+    <!-- Global Parameters and Functions -->
+    <xsl:param name="profile" as="xs:string">
+        <xsl:choose>
+            <xsl:when test="/*/cbc:ProfileID and matches(normalize-space(/*/cbc:ProfileID), 'urn:fdc:peppol.eu:2017:poacc:billing:([0-9]{2}):1.0')">
+                <xsl:value-of select="tokenize(normalize-space(/*/cbc:ProfileID), ':')[7]"/>
+            </xsl:when>
+            <xsl:otherwise>Unknown</xsl:otherwise>
+        </xsl:choose>
+    </xsl:param>
+    
+    <xsl:param name="supplierCountry" as="xs:string">
+        <xsl:choose>
+            <xsl:when test="/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2)">
+                <xsl:value-of select="upper-case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2)))"/>
+            </xsl:when>
+            <xsl:when test="/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2)">
+                <xsl:value-of select="upper-case(normalize-space(/*/cac:TaxRepresentativeParty/cac:PartyTaxScheme[cac:TaxScheme/cbc:ID = 'VAT']/substring(cbc:CompanyID, 1, 2)))"/>
+            </xsl:when>
+            <xsl:when test="/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode">
+                <xsl:value-of select="upper-case(normalize-space(/*/cac:AccountingSupplierParty/cac:Party/cac:PostalAddress/cac:Country/cbc:IdentificationCode))"/>
+            </xsl:when>
+            <xsl:otherwise>XX</xsl:otherwise>
+        </xsl:choose>
+    </xsl:param>
+    
+    <!-- Utility Functions -->
+    <xsl:function name="u:gln" as="xs:boolean">
+        <xsl:param name="val" as="xs:string"/>
+        <xsl:variable name="length" select="string-length($val) - 1"/>
+        <xsl:variable name="digits" select="reverse(for $i in string-to-codepoints(substring($val, 1, $length)) return $i - 48)"/>
+        <xsl:variable name="weightedSum" select="sum(for $i in (0 to $length - 1) return $digits[$i + 1] * (1 + ((($i + 1) mod 2) * 2))"/>
+        <xsl:value-of select="(10 - ($weightedSum mod 10)) mod 10 = number(substring($val, $length + 1, 1))"/>
+    </xsl:function>
+    
+    <xsl:function name="u:slack" as="xs:boolean">
+        <xsl:param name="exp" as="xs:decimal"/>
+        <xsl:param name="val" as="xs:decimal"/>
+        <xsl:param name="slack" as="xs:decimal"/>
+        <xsl:value-of select="xs:decimal($exp + $slack) &gt;= $val and xs:decimal($exp - $slack) &lt;= $val"/>
+    </xsl:function>
+    
+    <xsl:function name="u:mod11" as="xs:boolean">
+        <xsl:param name="val" as="xs:string"/>
+        <xsl:variable name="length" select="string-length($val) - 1"/>
+        <xsl:variable name="digits" select="reverse(for $i in string-to-codepoints(substring($val, 1, $length)) return $i - 48)"/>
+        <xsl:variable name="weightedSum" select="sum(for $i in (0 to $length - 1) return $digits[$i + 1] * (($i mod 6) + 2))"/>
+        <xsl:value-of select="number($val) &gt; 0 and (11 - ($weightedSum mod 11)) mod 11 = number(substring($val, $length + 1, 1))"/>
+    </xsl:function>
+    
+    <!-- Main Validation Template -->
+    <xsl:template match="/">
+        <svrl:schematron-output>
+            <!-- Empty elements rule -->
+            <xsl:apply-templates select="//*[not(*) and not(normalize-space())]"/>
+            
+            <!-- Document level rules -->
+            <xsl:apply-templates select="ubl-creditnote:CreditNote | ubl-invoice:Invoice"/>
+            
+            <!-- Accounting customer rules -->
+            <xsl:apply-templates select="cac:AccountingCustomerParty/cac:Party"/>
+            
+            <!-- Accounting supplier rules -->
+            <xsl:apply-templates select="cac:AccountingSupplierParty/cac:Party"/>
+            
+            <!-- Allowance/Charge rules -->
+            <xsl:apply-templates select="
+                ubl-invoice:Invoice/cac:AllowanceCharge[cbc:MultiplierFactorNumeric and not(cbc:BaseAmount)] |
+                ubl-invoice:Invoice/cac:InvoiceLine/cac:AllowanceCharge[cbc:MultiplierFactorNumeric and not(cbc:BaseAmount)] |
+                ubl-creditnote:CreditNote/cac:AllowanceCharge[cbc:MultiplierFactorNumeric and not(cbc:BaseAmount)] |
+                ubl-creditnote:CreditNote/cac:CreditNoteLine/cac:AllowanceCharge[cbc:MultiplierFactorNumeric and not(cbc:BaseAmount)] |
+                ubl-invoice:Invoice/cac:AllowanceCharge[not(cbc:MultiplierFactorNumeric) and cbc:BaseAmount] |
+                ubl-invoice:Invoice/cac:InvoiceLine/cac:AllowanceCharge[not(cbc:MultiplierFactorNumeric) and cbc:BaseAmount] |
+                ubl-creditnote:CreditNote/cac:AllowanceCharge[not(cbc:MultiplierFactorNumeric) and cbc:BaseAmount] |
+                ubl-creditnote:CreditNote/cac:CreditNoteLine/cac:AllowanceCharge[not(cbc:MultiplierFactorNumeric) and cbc:BaseAmount] |
+                ubl-invoice:Invoice/cac:AllowanceCharge |
+                ubl-invoice:Invoice/cac:InvoiceLine/cac:AllowanceCharge |
+                ubl-creditnote:CreditNote/cac:AllowanceCharge |
+                ubl-creditnote:CreditNote/cac:CreditNoteLine/cac:AllowanceCharge"/>
+            
+            <!-- Payment rules -->
+            <xsl:apply-templates select="
+                cac:PaymentMeans[some $code in tokenize('49 59', '\s')
+                satisfies normalize-space(cbc:PaymentMeansCode) = $code]"/>
+            
+            <!-- Currency rules -->
+            <xsl:apply-templates select="
+                cbc:Amount | cbc:BaseAmount | cbc:PriceAmount | 
+                cac:TaxTotal[cac:TaxSubtotal]/cbc:TaxAmount | 
+                cac:TaxSubtotal/cbc:TaxAmount | cbc:TaxableAmount | 
+                cbc:LineExtensionAmount | cbc:TaxExclusiveAmount | 
+                cbc:TaxInclusiveAmount | cbc:AllowanceTotalAmount | 
+                cbc:ChargeTotalAmount | cbc:PrepaidAmount | 
+                cbc:PayableRoundingAmount | cbc:PayableAmount"/>
+            
+            <!-- Line level rules -->
+            <xsl:apply-templates select="cac:InvoiceLine | cac:CreditNoteLine"/>
+            
+            <!-- National rules -->
+            <xsl:if test="$supplierCountry = 'NO'">
+                <xsl:apply-templates select="cac:AccountingSupplierParty/cac:Party"/>
+            </xsl:if>
+            
+            <!-- ... Additional rules and patterns ... -->
+            
+        </svrl:schematron-output>
+    </xsl:template>
+    
+    <!-- Rule Templates -->
+    <xsl:template match="*[not(*) and not(normalize-space())]">
+        <svrl:failed-assert test="false()" id="PEPPOL-EN16931-R008" flag="fatal">
+            <svrl:text>Document MUST not contain empty elements.</svrl:text>
+        </svrl:failed-assert>
+    </xsl:template>
+    
+    <xsl:template match="ubl-creditnote:CreditNote | ubl-invoice:Invoice">
+        <svrl:fired-rule context="{local-name()}"/>
+        
+        <svrl:assert test="cbc:ProfileID" id="PEPPOL-EN16931-R001" flag="fatal">
+            <svrl:text>Business process MUST be provided.</svrl:text>
+        </svrl:assert>
+        
+        <svrl:assert test="$profile != 'Unknown'" id="PEPPOL-EN16931-R007" flag="fatal">
+            <svrl:text>Business process MUST be in the format 'urn:fdc:peppol.eu:2017:poacc:billing:NN:1.0' where NN indicates the process number.</svrl:text>
+        </svrl:assert>
+        
+        <svrl:assert test="count(cbc:Note) &lt;= 1 or ($supplierCountryIsDE and $customerCountryIsDE)" 
+            id="PEPPOL-EN16931-R002" flag="fatal">
+            <svrl:text>No more than one note is allowed on document level, unless both the buyer and seller are German organizations.</svrl:text>
+        </svrl:assert>
+        
+        <!-- ... Additional document level assertions ... -->
+    </xsl:template>
+    
+    <xsl:template match="cac:AccountingCustomerParty/cac:Party">
+        <svrl:assert test="cbc:EndpointID" id="PEPPOL-EN16931-R010" flag="fatal">
+            <svrl:text>Buyer electronic address MUST be provided</svrl:text>
+        </svrl:assert>
+    </xsl:template>
+    
+    <xsl:template match="cac:AccountingSupplierParty/cac:Party">
+        <svrl:assert test="cbc:EndpointID" id="PEPPOL-EN16931-R020" flag="fatal">
+            <svrl:text>Seller electronic address MUST be provided</svrl:text>
+        </svrl:assert>
+    </xsl:template>
+    
+    <!-- ... More rule templates for each context ... -->
+    
+    <!-- National Rule for Norway -->
+    <xsl:template match="cac:AccountingSupplierParty/cac:Party[$supplierCountry = 'NO']">
+        <svrl:assert id="NO-R-001" flag="fatal"
+            test="
+                cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID, 1, 2)='NO' and 
+                matches(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID,3), '^[0-9]{9}MVA$')
+                and u:mod11(substring(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/cbc:CompanyID, 3, 9)) 
+                or not(cac:PartyTaxScheme[normalize-space(cac:TaxScheme/cbc:ID) = 'VAT']/substring(cbc:CompanyID, 1, 2)='NO')">
+            <svrl:text>For Norwegian suppliers, a VAT number MUST be the country code prefix NO followed by a valid Norwegian organization number (nine numbers) followed by the letters MVA.</svrl:text>
+        </svrl:assert>
+    </xsl:template>
+    
+    <!-- National Rule for Germany -->
+    <xsl:template match="ubl-invoice:Invoice | ubl-creditnote:CreditNote"
+        xmlns:sch="http://purl.oclc.org/dsdl/schematron">
+        <xsl:if test="$supplierCountryIsDE and $customerCountryIsDE">
+            <svrl:assert test="cac:PaymentMeans" flag="fatal" id="DE-R-001">
+                <svrl:text>An invoice shall contain information on "PAYMENT INSTRUCTIONS" (BG-16).</svrl:text>
+            </svrl:assert>
+            
+            <svrl:assert test="cbc:BuyerReference[boolean(normalize-space(.))]"
+                flag="fatal" id="DE-R-015">
+                <svrl:text>The element "Buyer reference" (BT-10) shall be provided.</svrl:text>
+            </svrl:assert>
+            
+            <!-- ... Additional German rules ... -->
+        </xsl:if>
+    </xsl:template>
+    
+    <!-- ... More national rules ... -->
+    
+    <!-- Code List Validation -->
+    <xsl:template match="cbc:EmbeddedDocumentBinaryObject[@mimeCode]">
+        <xsl:variable name="MIMECODE" select="tokenize('application/pdf image/png image/jpeg text/csv application/vnd.openxmlformats-officedocument.spreadsheetml.sheet application/vnd.oasis.opendocument.spreadsheet', '\s')"/>
+        
+        <svrl:assert id="PEPPOL-EN16931-CL001"
+            test="some $code in $MIMECODE satisfies @mimeCode = $code"
+            flag="fatal">
+            <svrl:text>Mime code must be according to subset of IANA code list.</svrl:text>
+        </svrl:assert>
+    </xsl:template>
+    
+    <xsl:template match="cac:AllowanceCharge[cbc:ChargeIndicator = 'false']/cbc:AllowanceChargeReasonCode">
+        <xsl:variable name="UNCL5189" select="tokenize('41 42 60 62 63 64 65 66 67 68 70 71 88 95 100 102 103 104 105', '\s')"/>
+        
+        <svrl:assert id="PEPPOL-EN16931-CL002"
+            test="some $code in $UNCL5189 satisfies normalize-space(text()) = $code"
+            flag="fatal">
+            <svrl:text>Reason code MUST be according to subset of UNCL 5189 D.16B.</svrl:text>
+        </svrl:assert>
+    </xsl:template>
+    
+    <!-- ... More code list validations ... -->
+    
+    <!-- Date Format Validation -->
+    <xsl:template match="cbc:IssueDate | cbc:DueDate | cbc:TaxPointDate | cbc:StartDate | cbc:EndDate | cbc:ActualDeliveryDate">
+        <svrl:assert id="PEPPOL-EN16931-F001"
+            test="string-length(text()) = 10 and (string(.) castable as xs:date)" 
+            flag="fatal">
+            <svrl:text>A date MUST be formatted YYYY-MM-DD.</svrl:text>
+        </svrl:assert>
+    </xsl:template>
+    
+</xsl:stylesheet>

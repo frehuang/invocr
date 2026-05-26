@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>invocr — 发票 OCR 测试</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/xml.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #f5f5f5;
+      color: #1a1a1a;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+
+    .upload-row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: flex-start;
+      margin-bottom: 1rem;
+    }
+
+    #drop-zone {
+      flex: 1;
+      border: 2px dashed #ccc;
+      border-radius: 10px;
+      background: #fff;
+      padding: 2rem 1.5rem;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    #drop-zone.drag-over { border-color: #4f46e5; background: #eef2ff; }
+    #drop-zone.disabled { opacity: 0.5; pointer-events: none; }
+    #drop-zone svg { width: 36px; height: 36px; color: #aaa; margin-bottom: 0.75rem; }
+    #drop-zone p { color: #555; font-size: 0.9rem; }
+    #drop-zone p span { color: #4f46e5; font-weight: 500; }
+    #drop-zone .hint { font-size: 0.78rem; color: #aaa; margin-top: 0.4rem; }
+    #file-input { display: none; }
+
+    .country-panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      min-width: 180px;
+    }
+
+    .country-panel label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 0.5rem;
+    }
+
+    #country-select {
+      width: 100%;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 0.4rem 0.6rem;
+      font-size: 0.875rem;
+      background: #fff;
+      cursor: pointer;
+    }
+
+    #status { margin-bottom: 1rem; min-height: 1.5rem; font-size: 0.9rem; }
+
+    .status-loading { display: flex; align-items: center; gap: 0.5rem; color: #4f46e5; }
+
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid #c7d2fe;
+      border-top-color: #4f46e5;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      flex-shrink: 0;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .status-error {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+      color: #b91c1c;
+    }
+
+    .status-error strong { display: block; margin-bottom: 0.25rem; }
+
+    /* Top row: 3 columns */
+    .results-top {
+      display: none;
+      gap: 1.25rem;
+      grid-template-columns: 1fr 1fr 1fr;
+      margin-bottom: 1.25rem;
+    }
+
+    .results-top.visible { display: grid; }
+
+    /* Bottom row: fixed XML full width */
+    .results-bottom {
+      display: none;
+    }
+
+    .results-bottom.visible { display: block; }
+
+    @media (max-width: 900px) {
+      .results-top { grid-template-columns: 1fr; }
+      .upload-row { flex-direction: column; }
+      .country-panel { min-width: unset; width: 100%; }
+    }
+
+    .panel {
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #e5e7eb;
+      background: #f9fafb;
+      gap: 0.5rem;
+    }
+
+    .panel-header h2 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      flex: 1;
+    }
+
+    .panel-badge {
+      font-size: 0.72rem;
+      font-weight: 600;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      white-space: nowrap;
+    }
+
+    .badge-ok { background: #dcfce7; color: #15803d; }
+    .badge-warn { background: #fef3c7; color: #92400e; }
+    .badge-error { background: #fef2f2; color: #b91c1c; }
+
+    .panel-body {
+      padding: 0.75rem 1rem;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .panel-body-nopad { flex: 1; overflow: auto; }
+
+    pre {
+      margin: 0;
+      overflow: auto;
+      max-height: 65vh;
+      font-size: 0.78rem;
+      line-height: 1.55;
+    }
+
+    pre code { padding: 1rem !important; display: block; }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      border: none;
+      border-radius: 5px;
+      padding: 0.3rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-indigo { background: #4f46e5; color: #fff; }
+    .btn-indigo:hover { background: #4338ca; }
+    .btn-teal { background: #0f766e; color: #fff; }
+    .btn-teal:hover { background: #0d6b63; }
+    .btn svg { width: 13px; height: 13px; }
+
+    .check-ok { color: #15803d; font-size: 0.875rem; }
+    .check-intro { font-size: 0.82rem; color: #92400e; margin-bottom: 0.6rem; }
+
+    .missing-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+
+    .missing-list li {
+      background: #fef3c7;
+      border: 1px solid #fde68a;
+      border-radius: 4px;
+      padding: 0.25rem 0.6rem;
+      font-size: 0.8rem;
+      font-family: monospace;
+      color: #92400e;
+    }
+
+    .val-ok { color: #15803d; font-size: 0.875rem; }
+    .val-intro { font-size: 0.82rem; color: #b91c1c; margin-bottom: 0.6rem; }
+
+    .error-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .error-list li {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 5px;
+      padding: 0.5rem 0.75rem;
+      font-size: 0.8rem;
+    }
+
+    .err-id {
+      font-family: monospace;
+      font-weight: 600;
+      color: #b91c1c;
+      display: block;
+      margin-bottom: 0.2rem;
+    }
+
+    .err-msg { color: #374151; }
+
+    .fixed-header-note {
+      font-size: 0.8rem;
+      color: #6b7280;
+      font-weight: normal;
+      margin-left: 0.5rem;
+    }
+
+    /* XML edit mode */
+    .xml-tabs { display: flex; gap: 0; border-bottom: 1px solid #e5e7eb; background: #f9fafb; }
+    .xml-tab {
+      padding: 0.4rem 0.9rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: #6b7280;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -1px;
+    }
+    .xml-tab.active { color: #4f46e5; border-bottom-color: #4f46e5; background: #fff; }
+
+    #xml-editor {
+      display: none;
+      width: 100%;
+      min-height: 300px;
+      max-height: 65vh;
+      font-family: monospace;
+      font-size: 0.78rem;
+      line-height: 1.55;
+      padding: 1rem;
+      border: none;
+      outline: none;
+      resize: vertical;
+      background: #fff;
+    }
+
+    .feedback-bar {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      padding: 0.6rem 1rem;
+      border-top: 1px solid #e5e7eb;
+      background: #f9fafb;
+    }
+
+    .feedback-bar span { font-size: 0.78rem; color: #6b7280; flex: 1; }
+
+    .btn-orange { background: #ea580c; color: #fff; }
+    .btn-orange:hover { background: #c2410c; }
+    .btn-orange:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Improvements panel */
+    .improvements-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .improvements-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+      user-select: none;
+      padding: 0.6rem 1rem;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #374151;
+      width: 100%;
+      text-align: left;
+    }
+
+    .improvements-toggle:hover { background: #f9fafb; }
+
+    .improvements-toggle .toggle-icon {
+      margin-left: auto;
+      font-size: 0.75rem;
+      color: #9ca3af;
+      transition: transform 0.2s;
+    }
+
+    .improvements-toggle.open .toggle-icon { transform: rotate(180deg); }
+
+    .improvements-body {
+      display: none;
+      background: #fff;
+      border: 1px solid #e5e7eb;
+      border-top: none;
+      border-radius: 0 0 10px 10px;
+      padding: 1rem;
+    }
+
+    .improvements-body.open { display: block; }
+
+    .improvements-empty { color: #9ca3af; font-size: 0.85rem; font-style: italic; }
+
+    .improvements-text {
+      font-size: 0.85rem;
+      line-height: 1.7;
+      color: #374151;
+      white-space: pre-wrap;
+    }
+
+    .improvements-meta {
+      font-size: 0.75rem;
+      color: #9ca3af;
+      margin-top: 0.75rem;
+    }
+
+    .feedback-success {
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 6px;
+      padding: 0.6rem 1rem;
+      color: #15803d;
+      font-size: 0.85rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>invocr</h1>
+    <p class="subtitle">上传发票 PDF，自动提取 UBL 2.1 XML 并校验修复</p>
+
+    <div class="upload-row">
+      <div id="drop-zone" role="button" tabindex="0" aria-label="上传 PDF 文件">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 13h6m-3-3v6m5 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+        </svg>
+        <p>拖拽 PDF 到此处，或 <span>点击选择文件</span></p>
+        <p class="hint">仅支持 PDF，最大 10 MB</p>
+        <input type="file" id="file-input" accept="application/pdf" />
+      </div>
+
+      <div class="country-panel">
+        <label for="country-select">校验规则</label>
+        <select id="country-select" aria-label="选择国家校验规则">
+          <option value="sg">新加坡 (PINT-SG)</option>
+          <option value="my">马来西亚 (PINT-MY)</option>
+          <option value="bis30">PEPPOL BIS 3.0</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="status"></div>
+
+    <!-- AI 改进点 -->
+    <div class="improvements-section">
+      <button class="improvements-toggle" id="improvements-toggle" type="button">
+        🧠 AI 识别改进点上下文
+        <span class="toggle-icon">▼</span>
+      </button>
+      <div class="improvements-body" id="improvements-body">
+        <div id="improvements-content"><p class="improvements-empty">暂无改进点，提交人工修正后自动生成。</p></div>
+      </div>
+    </div>
+    <div class="results-top" id="results-top">
+
+      <!-- 1. XML 输出 -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>UBL 2.1 XML</h2>
+          <button id="download-xml-btn" class="btn btn-indigo" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            下载
+          </button>
+        </div>
+        <div class="xml-tabs">
+          <button class="xml-tab active" id="tab-preview" type="button">预览</button>
+          <button class="xml-tab" id="tab-edit" type="button">编辑</button>
+        </div>
+        <div class="panel-body-nopad">
+          <pre id="xml-preview"><code id="xml-output" class="language-xml"></code></pre>
+          <textarea id="xml-editor" spellcheck="false" aria-label="编辑 XML"></textarea>
+        </div>
+        <div class="feedback-bar" id="feedback-bar" style="display:none">
+          <span>编辑完成后提交，AI 将分析差异并更新改进点</span>
+          <button class="btn btn-orange" id="feedback-btn" type="button">提交反馈</button>
+        </div>
+      </div>
+
+      <!-- 2. 未识别字段 -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>未识别字段</h2>
+          <span class="panel-badge" id="missing-badge"></span>
+        </div>
+        <div class="panel-body" id="missing-body"></div>
+      </div>
+
+      <!-- 3. 校验报告 -->
+      <div class="panel">
+        <div class="panel-header">
+          <h2>校验报告</h2>
+          <span class="panel-badge" id="validation-badge"></span>
+        </div>
+        <div class="panel-body" id="validation-body"></div>
+      </div>
+
+    </div>
+
+    <!-- 下方全宽：修复后的 XML -->
+    <div class="results-bottom" id="results-bottom">
+      <div class="panel">
+        <div class="panel-header">
+          <h2>
+            修复后 XML
+            <span class="fixed-header-note" id="fixed-note"></span>
+          </h2>
+          <span class="panel-badge" id="fixed-badge"></span>
+          <button id="download-fixed-btn" class="btn btn-teal" type="button">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+            </svg>
+            下载 ubl_<span id="fixed-country-label"></span>.xml
+          </button>
+        </div>
+        <div class="panel-body-nopad">
+          <pre><code id="fixed-xml-output" class="language-xml"></code></pre>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const dropZone = document.getElementById('drop-zone');
+    const fileInput = document.getElementById('file-input');
+    const statusEl = document.getElementById('status');
+    const resultsTop = document.getElementById('results-top');
+    const resultsBottom = document.getElementById('results-bottom');
+    const xmlOutput = document.getElementById('xml-output');
+    const xmlPreview = document.getElementById('xml-preview');
+    const xmlEditor = document.getElementById('xml-editor');
+    const tabPreview = document.getElementById('tab-preview');
+    const tabEdit = document.getElementById('tab-edit');
+    const feedbackBar = document.getElementById('feedback-bar');
+    const feedbackBtn = document.getElementById('feedback-btn');
+    const downloadXmlBtn = document.getElementById('download-xml-btn');
+    const countrySelect = document.getElementById('country-select');
+    const missingBadge = document.getElementById('missing-badge');
+    const missingBody = document.getElementById('missing-body');
+    const validationBadge = document.getElementById('validation-badge');
+    const validationBody = document.getElementById('validation-body');
+    const fixedBadge = document.getElementById('fixed-badge');
+    const fixedNote = document.getElementById('fixed-note');
+    const fixedXmlOutput = document.getElementById('fixed-xml-output');
+    const downloadFixedBtn = document.getElementById('download-fixed-btn');
+    const fixedCountryLabel = document.getElementById('fixed-country-label');
+    const improvementsToggle = document.getElementById('improvements-toggle');
+    const improvementsBody = document.getElementById('improvements-body');
+    const improvementsContent = document.getElementById('improvements-content');
+
+    let lastXml = '';
+    let lastFixedXml = '';
+    let lastCountry = 'sg';
+
+    // Load improvements on page load
+    loadImprovements();
+
+    // Improvements toggle
+    improvementsToggle.addEventListener('click', () => {
+      const open = improvementsBody.classList.toggle('open');
+      improvementsToggle.classList.toggle('open', open);
+    });
+
+    async function loadImprovements() {
+      try {
+        const res = await fetch('/invoices/improvements');
+        if (!res.ok) return;
+        const data = await res.json();
+        renderImprovements(data.improvements);
+      } catch (_) {}
+    }
+
+    function renderImprovements(text) {
+      if (!text || !text.trim()) {
+        improvementsContent.innerHTML = '<p class="improvements-empty">暂无改进点，提交人工修正后自动生成。</p>';
+        return;
+      }
+      improvementsContent.innerHTML = `<div class="improvements-text">${escapeHtml(text)}</div>`;
+    }
+
+    // XML tab switching
+    tabPreview.addEventListener('click', () => {
+      tabPreview.classList.add('active');
+      tabEdit.classList.remove('active');
+      xmlPreview.style.display = '';
+      xmlEditor.style.display = 'none';
+      feedbackBar.style.display = 'none';
+    });
+
+    tabEdit.addEventListener('click', () => {
+      tabEdit.classList.add('active');
+      tabPreview.classList.remove('active');
+      xmlPreview.style.display = 'none';
+      xmlEditor.style.display = 'block';
+      xmlEditor.value = lastXml;
+      feedbackBar.style.display = 'flex';
+    });
+
+    // Feedback submission
+    feedbackBtn.addEventListener('click', async () => {
+      const editedXml = xmlEditor.value.trim();
+      if (!editedXml || editedXml === lastXml) {
+        feedbackBar.querySelector('span').textContent = '内容未修改，无需提交。';
+        return;
+      }
+
+      feedbackBtn.disabled = true;
+      feedbackBtn.textContent = '分析中…';
+
+      try {
+        const res = await fetch('/invoices/feedback', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ original_xml: lastXml, edited_xml: editedXml }),
+        });
+
+        if (!res.ok) {
+          let detail = `HTTP ${res.status}`;
+          try { const j = await res.json(); if (j.detail) detail += ` — ${j.detail}`; } catch (_) {}
+          feedbackBar.querySelector('span').textContent = `提交失败：${detail}`;
+          return;
+        }
+
+        const data = await res.json();
+        renderImprovements(data.improvements);
+
+        // Auto-open improvements panel
+        improvementsBody.classList.add('open');
+        improvementsToggle.classList.add('open');
+
+        feedbackBar.innerHTML = '<p class="feedback-success">✓ 反馈已提交，改进点更新</p>';
+      } catch (err) {
+        feedbackBar.querySelector('span').textContent = `网络错误：${err.message}`;
+      } finally {
+        feedbackBtn.disabled = false;
+        feedbackBtn.textContent = '提交反馈';
+      }
+    });
+
+    // Upload
+    dropZone.addEventListener('click', () => fileInput.click());
+    dropZone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') fileInput.click();
+    });
+    dropZone.addEventListener('dragover', e => {
+      e.preventDefault();
+      dropZone.classList.add('drag-over');
+    });
+    ['dragleave', 'dragend'].forEach(evt =>
+      dropZone.addEventListener(evt, () => dropZone.classList.remove('drag-over'))
+    );
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      const file = e.dataTransfer.files[0];
+      if (file) handleFile(file);
+    });
+    fileInput.addEventListener('change', () => {
+      if (fileInput.files[0]) handleFile(fileInput.files[0]);
+      fileInput.value = '';
+    });
+
+    function handleFile(file) {
+      if (file.type !== 'application/pdf') {
+        showError('请上传 PDF 文件', `所选文件类型为 "${file.type || '未知'}"，不支持。`);
+        return;
+      }
+      uploadFile(file);
+    }
+
+    async function uploadFile(file) {
+      setLoading(true, `正在处理 ${file.name}…`);
+      resultsTop.classList.remove('visible');
+      resultsBottom.classList.remove('visible');
+
+      // Reset XML tabs to preview
+      tabPreview.click();
+
+      const formData = new FormData();
+      formData.append('file', file);
+      lastCountry = countrySelect.value;
+
+      try {
+        const res = await fetch(`/invoices/extract?country=${encodeURIComponent(lastCountry)}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          let detail = `HTTP ${res.status}`;
+          try { const j = await res.json(); if (j.detail) detail += ` — ${j.detail}`; } catch (_) {}
+          showError(`提取失败 (${res.status})`, detail);
+          return;
+        }
+
+        const data = await res.json();
+        showResults(data);
+      } catch (err) {
+        showError('网络错误', err.message || '无法连接到服务器');
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    function setLoading(on, message = '') {
+      dropZone.classList.toggle('disabled', on);
+      statusEl.innerHTML = on
+        ? `<div class="status-loading"><div class="spinner"></div><span>${message}</span></div>`
+        : '';
+    }
+
+    function showError(title, detail) {
+      statusEl.innerHTML = `<div class="status-error"><strong>${title}</strong>${detail}</div>`;
+    }
+
+    function showResults(data) {
+      statusEl.innerHTML = '';
+      lastXml = data.xml;
+      lastFixedXml = data.fixed_xml || '';
+
+      // 1. XML
+      xmlOutput.textContent = data.xml;
+      hljs.highlightElement(xmlOutput);
+
+      // 2. 未识别字段
+      const missing = data.missing_fields || [];
+      if (missing.length === 0) {
+        missingBadge.textContent = '全部识别';
+        missingBadge.className = 'panel-badge badge-ok';
+        missingBody.innerHTML = '<p class="check-ok">✓ 所有字段已成功提取</p>';
+      } else {
+        missingBadge.textContent = `${missing.length} 个缺失`;
+        missingBadge.className = 'panel-badge badge-warn';
+        const items = missing.map(f => `<li>${f}</li>`).join('');
+        missingBody.innerHTML = `<p class="check-intro">以下字段未能从 PDF 中提取：</p><ul class="missing-list">${items}</ul>`;
+      }
+
+      // 3. 校验报告
+      const errors = data.validation_errors || [];
+      const countryLabel = countrySelect.options[countrySelect.selectedIndex].text;
+      if (errors.length === 0) {
+        validationBadge.textContent = '通过';
+        validationBadge.className = 'panel-badge badge-ok';
+        validationBody.innerHTML = `<p class="val-ok">✓ ${countryLabel} 校验通过</p>`;
+      } else {
+        validationBadge.textContent = `${errors.length} 个错误`;
+        validationBadge.className = 'panel-badge badge-error';
+        const items = errors.map(e =>
+          `<li><span class="err-id">${escapeHtml(e.id || '—')}</span><span class="err-msg">${escapeHtml(e.message)}</span></li>`
+        ).join('');
+        validationBody.innerHTML =
+          `<p class="val-intro">${countryLabel} 发现 ${errors.length} 个校验错误：</p>` +
+          `<ul class="error-list">${items}</ul>`;
+      }
+
+      resultsTop.classList.add('visible');
+
+      // 4. 修复后 XML
+      if (data.fixed_xml) {
+        fixedCountryLabel.textContent = lastCountry;
+        const remaining = data.fixed_validation_errors || [];
+        if (remaining.length === 0) {
+          fixedBadge.textContent = '校验通过';
+          fixedBadge.className = 'panel-badge badge-ok';
+          fixedNote.textContent = `— 已修复全部 ${errors.length} 个错误`;
+        } else {
+          fixedBadge.textContent = `剩余 ${remaining.length} 个错误`;
+          fixedBadge.className = 'panel-badge badge-warn';
+          fixedNote.textContent = `— 已修复 ${errors.length - remaining.length}/${errors.length} 个错误`;
+        }
+        fixedXmlOutput.textContent = data.fixed_xml;
+        hljs.highlightElement(fixedXmlOutput);
+        resultsBottom.classList.add('visible');
+      }
+    }
+
+    downloadXmlBtn.addEventListener('click', () => downloadAs(lastXml, 'invoice.xml'));
+    downloadFixedBtn.addEventListener('click', () => downloadAs(lastFixedXml, `ubl_${lastCountry}.xml`));
+
+    function downloadAs(content, filename) {
+      const blob = new Blob([content], { type: 'application/xml' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+  </script>
+</body>
+</html>

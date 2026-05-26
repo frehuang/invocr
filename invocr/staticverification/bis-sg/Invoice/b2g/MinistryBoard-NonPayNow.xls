@@ -1,0 +1,692 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40" xmlns:msxsl="urn:schemas-microsoft-com:xslt" xmlns:user="urn:my-scripts" xmlns:ms="urn:schemas-microsoft-com:xslt">
+   <Styles>
+      <Style ss:ID="Default" ss:Name="Normal">
+         <Alignment ss:Vertical="Bottom" />
+         <Borders />
+         <Font />
+         <Interior />
+         <NumberFormat />
+         <Protection />
+      </Style>
+      <Style ss:ID="s21">
+         <Font ss:Bold="1" ss:FontName="Arial" ss:Size="8" />
+         <Alignment ss:Horizontal="Center" ss:Vertical="Bottom" ss:WrapText="1" />
+         <Interior ss:Color="#C0C0C0" ss:Pattern="Solid" />
+         <Borders>
+            <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" />
+            <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" />
+            <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" />
+            <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" />
+         </Borders>
+      </Style>
+      <Style ss:ID="StyleBorder">
+         <Borders>
+            <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" />
+            <Border ss:Position="Left" ss:LineStyle="Continuous" ss:Weight="1" />
+            <Border ss:Position="Right" ss:LineStyle="Continuous" ss:Weight="1" />
+            <Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" />
+         </Borders>
+         <Font ss:FontName="Arial" ss:Size="8" />
+         <Alignment ss:WrapText="1" />
+      </Style>
+      <Style ss:ID="StyleNoFill">
+         <Font ss:FontName="Arial" ss:Size="8" />
+         <Interior ss:Color="#FFFFFF" ss:Pattern="Solid" />
+         <Alignment ss:WrapText="1" />
+      </Style>
+   </Styles>
+   <Worksheet ss:Name="MinistryBoard">
+      <Table ss:StyleID="StyleNoFill">
+         <Column ss:Width="9" />
+         <Column ss:AutoFitWidth="1" ss:Width="150" />
+         <Column ss:AutoFitWidth="1" ss:Width="150" />
+         <Column ss:AutoFitWidth="1" ss:Width="150" />
+         <Row ss:Height="9" />
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="s21">
+               <Data ss:Type="String">MINISTRY / STATUTORY BOARD</Data>
+            </Cell>
+            <Cell ss:StyleID="s21">
+               <Data ss:Type="String">DEPARTMENT</Data>
+            </Cell>
+            <Cell ss:StyleID="s21">
+               <Data ss:Type="String">SUB-BUSINESS UNIT</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">NLB - National Library Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">NLB25 - NLB Digital Services&amp;Products</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">NLB25 - NLB Digital Services&amp;Products</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">NLB - National Library Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">NLB26 - NLB Planning &amp; Development</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">NLB26 - NLB Planning &amp; Development</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB01 - Organisational Excellence</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB01 - Organisational Excellence</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB02 - Singapore Water Academy</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB02 - Singapore Water Academy</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB03 - Defunct</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB03 - Defunct</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB04 - Human Resources</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB04 - Human Resources</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB05 - Industry Development</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB05 - Industry Development</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB06 - Water Supply Network</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB06 - Water Supply Network</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB07 - Water Reclamation (Network)</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB07 - Water Reclamation (Network)</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB08 - Water Supply Plant</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB08 - Water Supply Plant</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB09 - Technology</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB09 - Technology</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB10 - Water Reclamation (Plant)</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB10 - Water Reclamation (Plant)</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB11 - Infotech&amp;Digital Transformatn</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB11 - Infotech&amp;Digital Transformatn</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB12 - Catchment &amp; Waterways</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB12 - Catchment &amp; Waterways</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB13 - Special Projects &amp; Procurement</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB13 - Special Projects &amp; Procurement</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB14 - 3P Network</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB14 - 3P Network</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB15 - Jurong WRP</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB15 - Jurong WRP</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB16 - Kranji Newater Factory</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB16 - Kranji Newater Factory</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB17 - Ulu Pandan WRP</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB17 - Ulu Pandan WRP</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB18 - Kranji WRP</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB18 - Kranji WRP</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB19 - Bedok Newater Factory</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB19 - Bedok Newater Factory</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB20 - Changi WRP</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB20 - Changi WRP</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB21 - DTSS 2</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB21 - DTSS 2</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB22 - Sewer Maintenance Unit-WRN</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB22 - Sewer Maintenance Unit-WRN</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB23 - Kolam Ayer Centl Monitg Stn</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB23 - Kolam Ayer Centl Monitg Stn</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB24 - Coastal Protection Dept</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB24 - Coastal Protection Dept</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB25 - Joint Operations</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB25 - Joint Operations</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB26 - Enterprise Risk Management</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB26 - Enterprise Risk Management</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB27 - Internal Audit</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB27 - Internal Audit</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB28 - Legal Office</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB28 - Legal Office</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB29 - Policy and Planning</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB29 - Policy and Planning</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB30 - MEICA Department</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB30 - MEICA Department</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB31 - Water Quality</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB31 - Water Quality</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB32 - Centralised Services</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB32 - Centralised Services</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB33 - SS Div</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB33 - SS Div</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB34 - Public Private Partnership Mgt</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB34 - Public Private Partnership Mgt</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB - Public Utilities Board</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB35 - Water Systems Department</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">PUB35 - Water Systems Department</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">SSG - SkillsFuture Singapore</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">SSG39 - Skillaris Ecosystem Excel Div</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">SSG39 - Skillaris Ecosystem Excel Div</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STC - A*STAR Companies</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">ACC - Accelerate Technologies P L</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">ACCL - Accelerate Technologies P L</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STC - A*STAR Companies</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">ACC - Accelerate Technologies P L</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">DXDH - Diagnostics n Development Hub</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STC - A*STAR Companies</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">ACC - Accelerate Technologies P L</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">IPM - A*Star c/o Accelerate</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STC - A*STAR Companies</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">AVC - Accelerate Venture Creation</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">AVC - A*VC Operations</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STR - A*Star</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STR01 - A*Star</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">OPS - A*Star Ops</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STR - A*Star</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STR01 - A*Star</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">RDF - A*Star RDF</Data>
+            </Cell>
+         </Row>
+         <Row>
+            <Cell>
+               <Data ss:Type="String" />
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STR - A*Star</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STR01 - A*Star</Data>
+            </Cell>
+            <Cell ss:StyleID="StyleBorder">
+               <Data ss:Type="String">STR01 - A*Star</Data>
+            </Cell>
+         </Row>
+      </Table>
+   </Worksheet>
+</Workbook>
