@@ -59,3 +59,9 @@ class ExtractionResult(BaseModel):
     country: str
     fixed_xml: str | None = None
     fixed_validation_errors: list[ValidationError] = []
+
+
+class DirectXmlResult(BaseModel):
+    xml: str
+    xsd_errors: list[str]
+    valid: bool
