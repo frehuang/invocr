@@ -127,9 +127,9 @@ class GeminiXmlService:
 
     async def extract_invoice_xml(
         self, file_bytes: bytes, mime_type: str, country: str = "sg"
-    ) -> tuple[str, list[str], list[dict]]:
+    ) -> tuple[str, str, str, list[str], list[dict]]:
         """Extract invoice as UBL 2.1 XML directly from Gemini.
-        Returns (xml_str, xsd_errors, schematron_errors).
+        Returns (xsd_xml, pint_xml, final_xml, xsd_errors, schematron_errors).
         """
         improvements = load_improvements()
         system_prompt = _SYSTEM_PROMPT
@@ -157,7 +157,7 @@ class GeminiXmlService:
                 break
 
             if attempt == 2:
-                return xml_str, errors, []
+                return xml_str, xml_str, xml_str, errors, []
 
             error_summary = "\n".join(f"- {e}" for e in errors[:20])
             fix_prompt = f"""XSD VALIDATION ERRORS:
@@ -176,14 +176,17 @@ XML TO FIX:
             )
             xml_str = _clean_xml(fix_response.text)
 
+        xsd_xml = xml_str  # snapshot after XSD passes
+
         # Step 3: apply country-specific header values
         xml_str = _apply_country_headers(xml_str, country)
+        pint_xml = xml_str  # snapshot after country headers applied
 
         # Step 4: Schematron validation + retry loop (max 3 attempts)
         try:
             schematron_errors = validate_xml(xml_str, country)
         except ValueError:
-            return xml_str, [], []
+            return xsd_xml, pint_xml, pint_xml, [], []
 
         for attempt in range(3):
             if not schematron_errors:
@@ -210,7 +213,6 @@ XML TO FIX:
                 ),
             )
             xml_str = _clean_xml(fix_response.text)
-            # Re-apply country headers after fix (Gemini may have reset them)
             xml_str = _apply_country_headers(xml_str, country)
             try:
                 schematron_errors = validate_xml(xml_str, country)
@@ -218,4 +220,4 @@ XML TO FIX:
                 schematron_errors = []
                 break
 
-        return xml_str, [], schematron_errors
+        return xsd_xml, pint_xml, xml_str, [], schematron_errors

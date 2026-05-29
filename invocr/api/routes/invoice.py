@@ -141,14 +141,16 @@ async def extract_invoice_xml(
         )
 
     try:
-        xml_str, xsd_errors, schematron_errors = await get_gemini_xml_service().extract_invoice_xml(
+        xsd_xml, pint_xml, final_xml, xsd_errors, schematron_errors = await get_gemini_xml_service().extract_invoice_xml(
             content, file.content_type, country
         )
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
     return DirectXmlResult(
-        xml=xml_str,
+        xsd_xml=xsd_xml,
+        pint_xml=pint_xml,
+        final_xml=final_xml,
         xsd_errors=xsd_errors,
         xsd_valid=len(xsd_errors) == 0,
         schematron_errors=[ValidationError(**e) for e in schematron_errors],

@@ -662,11 +662,11 @@
 
     function showDirectResults(data) {
       statusEl.innerHTML = '';
-      lastXml = data.xml;
-      lastFixedXml = '';
+      lastXml = data.xsd_xml;       // UBL XML panel shows Step 2 result
+      lastFixedXml = data.final_xml; // fixed XML panel shows Step 4 result
 
-      // 1. XML
-      xmlOutput.textContent = data.xml;
+      // 1. UBL XML panel — Step 2 (XSD-validated)
+      xmlOutput.textContent = data.xsd_xml;
       hljs.highlightElement(xmlOutput);
 
       // 2. XSD 校验结果（未识别字段面板）
@@ -686,10 +686,15 @@
       // 3. Schematron 校验结果（校验报告面板）
       const countryLabel = countrySelect.options[countrySelect.selectedIndex].text;
       const serrors = data.schematron_errors || [];
+      const downloadPintBtn = `<button class="btn btn-teal" style="margin-top:0.75rem" onclick="downloadAs(${JSON.stringify(data.pint_xml)}, 'ubl_${lastCountry}.xml')" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:13px;height:13px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        下载 PINT XML (ubl_${lastCountry}.xml)
+      </button>`;
+
       if (data.schematron_valid) {
         validationBadge.textContent = '通过';
         validationBadge.className = 'panel-badge badge-ok';
-        validationBody.innerHTML = `<p class="val-ok">✓ ${countryLabel} Schematron 校验通过</p>`;
+        validationBody.innerHTML = `<p class="val-ok">✓ ${countryLabel} Schematron 校验通过</p>${downloadPintBtn}`;
       } else {
         validationBadge.textContent = `${serrors.length} 个错误`;
         validationBadge.className = 'panel-badge badge-error';
@@ -697,11 +702,28 @@
           `<li><span class="err-id">${escapeHtml(e.id || '—')}</span><span class="err-msg">${escapeHtml(e.message)}</span></li>`
         ).join('');
         validationBody.innerHTML =
-          `<p class="val-intro">${countryLabel} 发现 ${serrors.length} 个校验错误：</p>` +
-          `<ul class="error-list">${items}</ul>`;
+          `<p class="val-intro">${countryLabel} 发现 ${serrors.length} 个校验错误（已重试 3 次）：</p>` +
+          `<ul class="error-list">${items}</ul>${downloadPintBtn}`;
       }
 
       resultsTop.classList.add('visible');
+
+      // 4. 修复后 XML 面板（Step 4 final_xml，仅当与 pint_xml 不同时显示）
+      if (data.final_xml && data.final_xml !== data.pint_xml) {
+        fixedCountryLabel.textContent = lastCountry;
+        if (data.schematron_valid) {
+          fixedBadge.textContent = 'Schematron 通过';
+          fixedBadge.className = 'panel-badge badge-ok';
+          fixedNote.textContent = '— Schematron 修复后通过';
+        } else {
+          fixedBadge.textContent = `剩余 ${serrors.length} 个错误`;
+          fixedBadge.className = 'panel-badge badge-warn';
+          fixedNote.textContent = '— 已尝试修复 3 次';
+        }
+        fixedXmlOutput.textContent = data.final_xml;
+        hljs.highlightElement(fixedXmlOutput);
+        resultsBottom.classList.add('visible');
+      }
     }
 
     function setLoading(on, message = '') {
