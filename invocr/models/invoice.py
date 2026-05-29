@@ -64,4 +64,7 @@ class ExtractionResult(BaseModel):
 class DirectXmlResult(BaseModel):
     xml: str
     xsd_errors: list[str]
-    valid: bool
+    xsd_valid: bool
+    schematron_errors: list[ValidationError] = []
+    schematron_valid: bool = True
+    country: str = ""

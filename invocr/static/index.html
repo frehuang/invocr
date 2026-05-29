@@ -392,18 +392,6 @@
           <option value="bis30">PEPPOL BIS 3.0</option>
         </select>
       </div>
-
-      <div class="country-panel">
-        <label>提取模式</label>
-        <div style="display:flex;flex-direction:column;gap:0.4rem;margin-top:0.1rem">
-          <label style="display:flex;align-items:center;gap:0.4rem;font-weight:normal;font-size:0.85rem;cursor:pointer">
-            <input type="radio" name="extract-mode" value="json" checked> JSON → XML
-          </label>
-          <label style="display:flex;align-items:center;gap:0.4rem;font-weight:normal;font-size:0.85rem;cursor:pointer">
-            <input type="radio" name="extract-mode" value="direct"> 直接生成 XML
-          </label>
-        </div>
-      </div>
     </div>
 
     <div id="status"></div>
@@ -644,40 +632,27 @@
       resultsTop.classList.remove('visible');
       resultsBottom.classList.remove('visible');
 
-      // Reset XML tabs to preview
       tabPreview.click();
 
       const formData = new FormData();
       formData.append('file', file);
       lastCountry = countrySelect.value;
 
-      const mode = document.querySelector('input[name="extract-mode"]:checked').value;
-
       try {
-        if (mode === 'direct') {
-          const res = await fetch('/invoices/extract-xml', { method: 'POST', body: formData });
-          if (!res.ok) {
-            let detail = `HTTP ${res.status}`;
-            try { const j = await res.json(); if (j.detail) detail += ` — ${j.detail}`; } catch (_) {}
-            showError(`提取失败 (${res.status})`, detail);
-            return;
-          }
-          const data = await res.json();
-          showDirectResults(data);
-        } else {
-          const res = await fetch(`/invoices/extract?country=${encodeURIComponent(lastCountry)}`, {
-            method: 'POST',
-            body: formData,
-          });
-          if (!res.ok) {
-            let detail = `HTTP ${res.status}`;
-            try { const j = await res.json(); if (j.detail) detail += ` — ${j.detail}`; } catch (_) {}
-            showError(`提取失败 (${res.status})`, detail);
-            return;
-          }
-          const data = await res.json();
-          showResults(data);
+        const res = await fetch(`/invoices/extract-xml?country=${encodeURIComponent(lastCountry)}`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          let detail = `HTTP ${res.status}`;
+          try { const j = await res.json(); if (j.detail) detail += ` — ${j.detail}`; } catch (_) {}
+          showError(`提取失败 (${res.status})`, detail);
+          return;
         }
+
+        const data = await res.json();
+        showDirectResults(data);
       } catch (err) {
         showError('网络错误', err.message || '无法连接到服务器');
       } finally {
@@ -690,15 +665,15 @@
       lastXml = data.xml;
       lastFixedXml = '';
 
-      // XML
+      // 1. XML
       xmlOutput.textContent = data.xml;
       hljs.highlightElement(xmlOutput);
 
-      // Missing fields panel — show XSD result instead
-      if (data.valid) {
+      // 2. XSD 校验结果（未识别字段面板）
+      if (data.xsd_valid) {
         missingBadge.textContent = 'XSD 通过';
         missingBadge.className = 'panel-badge badge-ok';
-        missingBody.innerHTML = '<p class="check-ok">✓ XSD 校验通过，XML 结构合规</p>';
+        missingBody.innerHTML = '<p class="check-ok">✓ XSD 结构校验通过</p>';
       } else {
         missingBadge.textContent = `${data.xsd_errors.length} 个 XSD 错误`;
         missingBadge.className = 'panel-badge badge-error';
@@ -708,10 +683,23 @@
           `<ul class="missing-list" style="flex-direction:column">${items}</ul>`;
       }
 
-      // Validation panel — show mode info
-      validationBadge.textContent = '直接 XML 模式';
-      validationBadge.className = 'panel-badge badge-warn';
-      validationBody.innerHTML = '<p style="font-size:0.85rem;color:#6b7280">此模式由 Gemini 直接生成 UBL XML，未执行国家 Schematron 校验。</p>';
+      // 3. Schematron 校验结果（校验报告面板）
+      const countryLabel = countrySelect.options[countrySelect.selectedIndex].text;
+      const serrors = data.schematron_errors || [];
+      if (data.schematron_valid) {
+        validationBadge.textContent = '通过';
+        validationBadge.className = 'panel-badge badge-ok';
+        validationBody.innerHTML = `<p class="val-ok">✓ ${countryLabel} Schematron 校验通过</p>`;
+      } else {
+        validationBadge.textContent = `${serrors.length} 个错误`;
+        validationBadge.className = 'panel-badge badge-error';
+        const items = serrors.map(e =>
+          `<li><span class="err-id">${escapeHtml(e.id || '—')}</span><span class="err-msg">${escapeHtml(e.message)}</span></li>`
+        ).join('');
+        validationBody.innerHTML =
+          `<p class="val-intro">${countryLabel} 发现 ${serrors.length} 个校验错误：</p>` +
+          `<ul class="error-list">${items}</ul>`;
+      }
 
       resultsTop.classList.add('visible');
     }

@@ -1,5 +1,6 @@
 import json
 import pathlib
+import re
 
 from google import genai
 from google.genai import types
@@ -7,8 +8,33 @@ from lxml import etree
 
 from invocr.core.config import settings
 from invocr.services.improvements import load_improvements
+from invocr.services.validation import validate_xml
 
 _XSD_PATH = pathlib.Path(__file__).parent.parent / "invoice" / "maindoc" / "UBL-Invoice-2.1.xsd"
+
+# Country-specific UBL header values
+_COUNTRY_HEADERS: dict[str, dict[str, str]] = {
+    "sg": {
+        "CustomizationID": "urn:peppol:pint:billing-1@sg-1",
+        "ProfileID": "urn:peppol:bis:billing",
+    },
+}
+
+_CBC = "urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2"
+
+
+def _apply_country_headers(xml_str: str, country: str) -> str:
+    """Replace CustomizationID and ProfileID for country-specific formats."""
+    headers = _COUNTRY_HEADERS.get(country.lower())
+    if not headers:
+        return xml_str
+    for tag, value in headers.items():
+        xml_str = re.sub(
+            rf'(<cbc:{tag}[^>]*>)[^<]*(</cbc:{tag}>)',
+            rf'\g<1>{value}\2',
+            xml_str,
+        )
+    return xml_str
 
 _SYSTEM_PROMPT = """You are a UBL 2.1 Invoice XML generation specialist.
 
@@ -59,6 +85,13 @@ You will receive a UBL 2.1 Invoice XML and a list of XSD validation errors.
 Fix the XML to pass XSD validation. Do NOT change any invoice business data (amounts, dates, names, etc.).
 Return ONLY the fixed raw XML — no markdown fences, no explanation."""
 
+_SCHEMATRON_FIX_PROMPT = """You are a UBL 2.1 Invoice XML repair specialist for country-specific Schematron rules.
+
+You will receive a UBL 2.1 Invoice XML and a list of Schematron validation errors (rule ID + message).
+Fix the XML structure to resolve these errors. Do NOT change any invoice business data (amounts, dates, invoice number, party names, line items).
+You may add missing required elements, fix element ordering, add required attributes or codes.
+Return ONLY the fixed raw XML — no markdown fences, no explanation."""
+
 
 def _load_xsd_schema() -> etree.XMLSchema:
     xsd_doc = etree.parse(str(_XSD_PATH))
@@ -92,9 +125,11 @@ class GeminiXmlService:
             http_options=types.HttpOptions(api_version="v1beta"),
         )
 
-    async def extract_invoice_xml(self, file_bytes: bytes, mime_type: str) -> tuple[str, list[str]]:
+    async def extract_invoice_xml(
+        self, file_bytes: bytes, mime_type: str, country: str = "sg"
+    ) -> tuple[str, list[str], list[dict]]:
         """Extract invoice as UBL 2.1 XML directly from Gemini.
-        Returns (xml_str, xsd_errors). xsd_errors is empty if valid.
+        Returns (xml_str, xsd_errors, schematron_errors).
         """
         improvements = load_improvements()
         system_prompt = _SYSTEM_PROMPT
@@ -119,13 +154,11 @@ class GeminiXmlService:
         for attempt in range(3):
             errors = _validate_xsd(xml_str)
             if not errors:
-                return xml_str, []
+                break
 
             if attempt == 2:
-                # Last attempt failed, return with errors
-                return xml_str, errors
+                return xml_str, errors, []
 
-            # Ask Gemini to fix
             error_summary = "\n".join(f"- {e}" for e in errors[:20])
             fix_prompt = f"""XSD VALIDATION ERRORS:
 {error_summary}
@@ -143,4 +176,46 @@ XML TO FIX:
             )
             xml_str = _clean_xml(fix_response.text)
 
-        return xml_str, _validate_xsd(xml_str)
+        # Step 3: apply country-specific header values
+        xml_str = _apply_country_headers(xml_str, country)
+
+        # Step 4: Schematron validation + retry loop (max 3 attempts)
+        try:
+            schematron_errors = validate_xml(xml_str, country)
+        except ValueError:
+            return xml_str, [], []
+
+        for attempt in range(3):
+            if not schematron_errors:
+                break
+
+            if attempt == 2:
+                break
+
+            error_summary = "\n".join(
+                f"- [{e['id']}] {e['message']}" for e in schematron_errors[:20]
+            )
+            fix_prompt = f"""SCHEMATRON VALIDATION ERRORS:
+{error_summary}
+
+XML TO FIX:
+{xml_str}"""
+
+            fix_response = self.client.models.generate_content(
+                model=settings.gemini_model,
+                contents=[fix_prompt],
+                config=types.GenerateContentConfig(
+                    system_instruction=_SCHEMATRON_FIX_PROMPT,
+                    temperature=0,
+                ),
+            )
+            xml_str = _clean_xml(fix_response.text)
+            # Re-apply country headers after fix (Gemini may have reset them)
+            xml_str = _apply_country_headers(xml_str, country)
+            try:
+                schematron_errors = validate_xml(xml_str, country)
+            except ValueError:
+                schematron_errors = []
+                break
+
+        return xml_str, [], schematron_errors
