@@ -124,7 +124,6 @@ async def get_improvements():
 @router.post("/extract-xml", response_model=DirectXmlResult)
 async def extract_invoice_xml(
     file: UploadFile = File(...),
-    country: str = Query(default="sg"),
 ):
     if file.content_type not in ALLOWED_MIME_TYPES:
         raise HTTPException(
@@ -141,9 +140,8 @@ async def extract_invoice_xml(
         )
 
     try:
-        xsd_xml, pint_xml, final_xml, xsd_errors, schematron_errors = await get_gemini_xml_service().extract_invoice_xml(
-            content, file.content_type, country
-        )
+        xsd_xml, pint_xml, final_xml, xsd_errors, schematron_errors, detected_country = \
+            await get_gemini_xml_service().extract_invoice_xml(content, file.content_type)
     except Exception as e:
         raise HTTPException(status_code=502, detail=str(e))
 
@@ -155,5 +153,5 @@ async def extract_invoice_xml(
         xsd_valid=len(xsd_errors) == 0,
         schematron_errors=[ValidationError(**e) for e in schematron_errors],
         schematron_valid=len(schematron_errors) == 0,
-        country=country,
+        detected_country=detected_country,
     )

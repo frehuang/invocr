@@ -62,11 +62,11 @@ class ExtractionResult(BaseModel):
 
 
 class DirectXmlResult(BaseModel):
-    xsd_xml: str                          # XML after XSD validation (Step 2)
-    pint_xml: str                         # XML after country header replacement (Step 3)
-    final_xml: str                        # XML after Schematron fix loop (Step 4)
+    xsd_xml: str
+    pint_xml: str
+    final_xml: str
     xsd_errors: list[str]
     xsd_valid: bool
     schematron_errors: list[ValidationError] = []
     schematron_valid: bool = True
-    country: str = ""
+    detected_country: str = ""
