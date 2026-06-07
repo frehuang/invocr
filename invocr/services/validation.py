@@ -12,16 +12,37 @@ _COUNTRY_XSLT: dict[str, pathlib.Path] = {
 
 _SVRL_NS = "http://purl.oclc.org/dsdl/svrl"
 
+# Module-level cache: country_code → compiled Saxon executable
+_XSLT_CACHE: dict[str, object] = {}
+_SAXON_PROC: PySaxonProcessor | None = None
+
+
+def _get_executable(country_code: str):
+    global _SAXON_PROC
+    if country_code not in _XSLT_CACHE:
+        if _SAXON_PROC is None:
+            _SAXON_PROC = PySaxonProcessor(license=False)
+        xslt_path = _COUNTRY_XSLT[country_code]
+        xslt_proc = _SAXON_PROC.new_xslt30_processor()
+        _XSLT_CACHE[country_code] = xslt_proc.compile_stylesheet(stylesheet_file=str(xslt_path))
+    return _XSLT_CACHE[country_code]
+
 
 def validate_xml(xml_str: str, country_code: str) -> list[dict]:
     xslt_path = _COUNTRY_XSLT.get(country_code.lower())
     if xslt_path is None or not xslt_path.exists():
         raise ValueError(f"No validation rules found for country: {country_code}")
 
-    with PySaxonProcessor(license=False) as proc:
-        xslt_proc = proc.new_xslt30_processor()
-        executable = xslt_proc.compile_stylesheet(stylesheet_file=str(xslt_path))
+    try:
+        executable = _get_executable(country_code.lower())
+        proc = _SAXON_PROC
         result = executable.transform_to_string(xdm_node=proc.parse_xml(xml_text=xml_str))
+    except Exception:
+        # Fall back to fresh processor if cached one fails
+        with PySaxonProcessor(license=False) as proc:
+            xslt_proc = proc.new_xslt30_processor()
+            executable = xslt_proc.compile_stylesheet(stylesheet_file=str(xslt_path))
+            result = executable.transform_to_string(xdm_node=proc.parse_xml(xml_text=xml_str))
 
     if not result:
         return []

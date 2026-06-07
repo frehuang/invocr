@@ -566,7 +566,7 @@
         const res = await fetch('/invoices/feedback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ original_xml: lastXml, edited_xml: editedXml }),
+          body: JSON.stringify({ xsd_xml: lastXml, edited_xml: editedXml }),
         });
 
         if (!res.ok) {

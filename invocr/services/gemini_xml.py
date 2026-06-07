@@ -123,10 +123,20 @@ def _load_xsd_schema() -> etree.XMLSchema:
     xsd_doc = etree.parse(str(_XSD_PATH))
     return etree.XMLSchema(xsd_doc)
 
+# Module-level XSD schema cache
+_XSD_SCHEMA: etree.XMLSchema | None = None
+
+
+def _get_xsd_schema() -> etree.XMLSchema:
+    global _XSD_SCHEMA
+    if _XSD_SCHEMA is None:
+        _XSD_SCHEMA = _load_xsd_schema()
+    return _XSD_SCHEMA
+
 
 def _validate_xsd(xml_str: str) -> list[str]:
     try:
-        schema = _load_xsd_schema()
+        schema = _get_xsd_schema()
         doc = etree.fromstring(xml_str.encode("utf-8"))
         schema.validate(doc)
         return [str(e) for e in schema.error_log]
