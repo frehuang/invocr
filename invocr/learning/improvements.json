@@ -1,5 +1,5 @@
 {
   "version": 1,
-  "improvements": "*   **Structured Exchange Rate Extraction:** Extract exchange rate details (source currency, target currency, rate) and map them to `cac:TaxExchangeRate`.\n*   **Tax Currency Identification:** Identify and include `cbc:TaxCurrencyCode` at the document level if present or implied.\n*   **Tax Total in Tax Currency**: When `cbc:TaxCurrencyCode` is present, identify and extract the total tax amount in that currency. If not explicitly stated, calculate it using `cac:TaxExchangeRate` if available. Include this amount in a separate `cac:TaxTotal` block at the document level.\n*   **Party Name Mapping Preference:** For legal entities, prioritize mapping the party name to `cac:PartyLegalEntity/cbc:RegistrationName`.\n*   **EndpointID Population:** Always include `cbc:EndpointID` with an appropriate `schemeID` (e.g., '0195') for supplier and buyer parties, using `cbc:CompanyID` if available.\n*   **Contact Information Extraction:** Extract and include contact email addresses for parties under `cac:Contact/cbc:ElectronicMail`.\n*   **Standardize Unit Codes:** Normalize common unit codes, such as converting \"PCS\" to \"C62\" (Piece) for `cbc:InvoicedQuantity/@unitCode`.",
-  "updated_at": "2026-05-26T12:48:50.768850+00:00"
+  "improvements": "",
+  "updated_at": ""
 }

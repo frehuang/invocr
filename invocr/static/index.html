@@ -385,12 +385,8 @@
       </div>
 
       <div class="country-panel">
-        <label for="country-select">校验规则</label>
-        <select id="country-select" aria-label="选择国家校验规则">
-          <option value="sg">新加坡 (PINT-SG)</option>
-          <option value="my">马来西亚 (PINT-MY)</option>
-          <option value="bis30">PEPPOL BIS 3.0</option>
-        </select>
+        <label>检测到的国家</label>
+        <div id="detected-country-display" style="font-size:0.875rem;color:#6b7280;margin-top:0.25rem">上传后自动检测</div>
       </div>
     </div>
 
@@ -493,7 +489,7 @@
     const feedbackBar = document.getElementById('feedback-bar');
     const feedbackBtn = document.getElementById('feedback-btn');
     const downloadXmlBtn = document.getElementById('download-xml-btn');
-    const countrySelect = document.getElementById('country-select');
+    const detectedCountryDisplay = document.getElementById('detected-country-display');
     const missingBadge = document.getElementById('missing-badge');
     const missingBody = document.getElementById('missing-body');
     const validationBadge = document.getElementById('validation-badge');
@@ -509,7 +505,7 @@
 
     let lastXml = '';
     let lastFixedXml = '';
-    let lastCountry = 'sg';
+    let lastCountry = '';
 
     // Load improvements on page load
     loadImprovements();
@@ -570,7 +566,7 @@
         const res = await fetch('/invoices/feedback', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ original_xml: lastXml, edited_xml: editedXml }),
+          body: JSON.stringify({ xsd_xml: lastXml, edited_xml: editedXml }),
         });
 
         if (!res.ok) {
@@ -632,15 +628,13 @@
       resultsTop.classList.remove('visible');
       resultsBottom.classList.remove('visible');
 
-      // Reset XML tabs to preview
       tabPreview.click();
 
       const formData = new FormData();
       formData.append('file', file);
-      lastCountry = countrySelect.value;
 
       try {
-        const res = await fetch(`/invoices/extract?country=${encodeURIComponent(lastCountry)}`, {
+      const res = await fetch('/invoices/extract-xml', {
           method: 'POST',
           body: formData,
         });
@@ -653,11 +647,91 @@
         }
 
         const data = await res.json();
-        showResults(data);
+        showDirectResults(data);
       } catch (err) {
         showError('网络错误', err.message || '无法连接到服务器');
       } finally {
         setLoading(false);
+      }
+    }
+
+    function showDirectResults(data) {
+      statusEl.innerHTML = '';
+      lastXml = data.xsd_xml;
+      lastFixedXml = data.final_xml;
+      lastCountry = (data.detected_country || '').toLowerCase();
+
+      // Update detected country display
+      const countryNames = { SG: '新加坡 (PINT-SG)', MY: '马来西亚 (PINT-MY)' };
+      const countryLabel = countryNames[data.detected_country] || data.detected_country || '未知';
+      detectedCountryDisplay.textContent = data.detected_country
+        ? `${countryLabel}`
+        : '未能检测到国家';
+
+      // 1. UBL XML panel — Step 2 (XSD-validated)
+      xmlOutput.textContent = data.xsd_xml;
+      hljs.highlightElement(xmlOutput);
+
+      // 2. XSD 校验结果
+      if (data.xsd_valid) {
+        missingBadge.textContent = 'XSD 通过';
+        missingBadge.className = 'panel-badge badge-ok';
+        missingBody.innerHTML = '<p class="check-ok">✓ XSD 结构校验通过</p>';
+      } else {
+        missingBadge.textContent = `${data.xsd_errors.length} 个 XSD 错误`;
+        missingBadge.className = 'panel-badge badge-error';
+        const items = data.xsd_errors.map(e => `<li>${escapeHtml(e)}</li>`).join('');
+        missingBody.innerHTML =
+          `<p class="check-intro">XSD 校验失败（已重试 3 次）：</p>` +
+          `<ul class="missing-list" style="flex-direction:column">${items}</ul>`;
+      }
+
+      // 3. Schematron 校验结果
+      const serrors = data.schematron_errors || [];
+      const pintFilename = `ubl_${lastCountry || 'invoice'}.xml`;
+      const downloadPintBtn = `<button class="btn btn-teal" style="margin-top:0.75rem" onclick="downloadAs(${JSON.stringify(data.pint_xml)}, '${pintFilename}')" type="button">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="width:13px;height:13px"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        下载 PINT XML (${pintFilename})
+      </button>`;
+
+      if (!data.detected_country || !data.xsd_valid) {
+        validationBadge.textContent = '未校验';
+        validationBadge.className = 'panel-badge badge-warn';
+        validationBody.innerHTML = `<p style="font-size:0.85rem;color:#6b7280">${
+          !data.xsd_valid ? 'XSD 校验未通过，跳过 Schematron 校验。' : '未检测到支持的国家，跳过 Schematron 校验。'
+        }</p>`;
+      } else if (data.schematron_valid) {
+        validationBadge.textContent = '通过';
+        validationBadge.className = 'panel-badge badge-ok';
+        validationBody.innerHTML = `<p class="val-ok">✓ ${countryLabel} Schematron 校验通过</p>${downloadPintBtn}`;
+      } else {
+        validationBadge.textContent = `${serrors.length} 个错误`;
+        validationBadge.className = 'panel-badge badge-error';
+        const items = serrors.map(e =>
+          `<li><span class="err-id">${escapeHtml(e.id || '—')}</span><span class="err-msg">${escapeHtml(e.message)}</span></li>`
+        ).join('');
+        validationBody.innerHTML =
+          `<p class="val-intro">${countryLabel} 发现 ${serrors.length} 个校验错误（已重试 3 次）：</p>` +
+          `<ul class="error-list">${items}</ul>${downloadPintBtn}`;
+      }
+
+      resultsTop.classList.add('visible');
+
+      // 4. 修复后 XML 面板（仅当 final_xml 与 pint_xml 不同时显示）
+      if (data.final_xml && data.final_xml !== data.pint_xml) {
+        fixedCountryLabel.textContent = lastCountry;
+        if (data.schematron_valid) {
+          fixedBadge.textContent = 'Schematron 通过';
+          fixedBadge.className = 'panel-badge badge-ok';
+          fixedNote.textContent = '— Schematron 修复后通过';
+        } else {
+          fixedBadge.textContent = `剩余 ${serrors.length} 个错误`;
+          fixedBadge.className = 'panel-badge badge-warn';
+          fixedNote.textContent = '— 已尝试修复 3 次';
+        }
+        fixedXmlOutput.textContent = data.final_xml;
+        hljs.highlightElement(fixedXmlOutput);
+        resultsBottom.classList.add('visible');
       }
     }
 
@@ -670,67 +744,6 @@
 
     function showError(title, detail) {
       statusEl.innerHTML = `<div class="status-error"><strong>${title}</strong>${detail}</div>`;
-    }
-
-    function showResults(data) {
-      statusEl.innerHTML = '';
-      lastXml = data.xml;
-      lastFixedXml = data.fixed_xml || '';
-
-      // 1. XML
-      xmlOutput.textContent = data.xml;
-      hljs.highlightElement(xmlOutput);
-
-      // 2. 未识别字段
-      const missing = data.missing_fields || [];
-      if (missing.length === 0) {
-        missingBadge.textContent = '全部识别';
-        missingBadge.className = 'panel-badge badge-ok';
-        missingBody.innerHTML = '<p class="check-ok">✓ 所有字段已成功提取</p>';
-      } else {
-        missingBadge.textContent = `${missing.length} 个缺失`;
-        missingBadge.className = 'panel-badge badge-warn';
-        const items = missing.map(f => `<li>${f}</li>`).join('');
-        missingBody.innerHTML = `<p class="check-intro">以下字段未能从 PDF 中提取：</p><ul class="missing-list">${items}</ul>`;
-      }
-
-      // 3. 校验报告
-      const errors = data.validation_errors || [];
-      const countryLabel = countrySelect.options[countrySelect.selectedIndex].text;
-      if (errors.length === 0) {
-        validationBadge.textContent = '通过';
-        validationBadge.className = 'panel-badge badge-ok';
-        validationBody.innerHTML = `<p class="val-ok">✓ ${countryLabel} 校验通过</p>`;
-      } else {
-        validationBadge.textContent = `${errors.length} 个错误`;
-        validationBadge.className = 'panel-badge badge-error';
-        const items = errors.map(e =>
-          `<li><span class="err-id">${escapeHtml(e.id || '—')}</span><span class="err-msg">${escapeHtml(e.message)}</span></li>`
-        ).join('');
-        validationBody.innerHTML =
-          `<p class="val-intro">${countryLabel} 发现 ${errors.length} 个校验错误：</p>` +
-          `<ul class="error-list">${items}</ul>`;
-      }
-
-      resultsTop.classList.add('visible');
-
-      // 4. 修复后 XML
-      if (data.fixed_xml) {
-        fixedCountryLabel.textContent = lastCountry;
-        const remaining = data.fixed_validation_errors || [];
-        if (remaining.length === 0) {
-          fixedBadge.textContent = '校验通过';
-          fixedBadge.className = 'panel-badge badge-ok';
-          fixedNote.textContent = `— 已修复全部 ${errors.length} 个错误`;
-        } else {
-          fixedBadge.textContent = `剩余 ${remaining.length} 个错误`;
-          fixedBadge.className = 'panel-badge badge-warn';
-          fixedNote.textContent = `— 已修复 ${errors.length - remaining.length}/${errors.length} 个错误`;
-        }
-        fixedXmlOutput.textContent = data.fixed_xml;
-        hljs.highlightElement(fixedXmlOutput);
-        resultsBottom.classList.add('visible');
-      }
     }
 
     downloadXmlBtn.addEventListener('click', () => downloadAs(lastXml, 'invoice.xml'));
